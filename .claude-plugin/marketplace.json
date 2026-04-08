@@ -1,15 +1,15 @@
 {
   "name": "autoworker",
   "owner": {
-    "name": "phj128",
-    "url": "https://github.com/phj128"
+    "name": "GitHdu",
+    "url": "https://github.com/GitHdu"
   },
   "plugins": [
     {
       "name": "autoworker",
       "source": "./",
       "description": "Auto-loop execution workflow with quality gates for Claude Code. Automatically decomposes tasks, implements code, runs tests, and iterates through quality gates until completion.",
-      "version": "1.0.0"
+      "version": "1.1.0"
     }
   ]
 }
