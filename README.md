@@ -25,7 +25,7 @@ With Autoworker:
 
 ```bash
 # Add the marketplace
-/plugin marketplace add phj128/autoworker
+/plugin marketplace add GitHdu/autoworker
 
 # Install the plugin
 /plugin install autoworker@autoworker

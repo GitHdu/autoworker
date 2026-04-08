@@ -6,7 +6,7 @@ description: >
   testing (L1-L4), and iterative quality gates until completion. Invoke with /autoworker.
 user-invocable: true
 version: "1.0.0"
-author: "phj128"
+author: "GitHdu"
 license: "MIT"
 tags: workflow, automation, quality-gates, testing
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch, WebSearch, Task, AskUserQuestion, Skill
