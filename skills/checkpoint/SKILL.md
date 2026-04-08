@@ -2,7 +2,9 @@
 name: checkpoint
 description: |
   Record progress to subtask: Phase completion (from autoworker:code) or test results (from autoworker:test).
-  Auto-detects upstream type from conversation context. Ends by calling autoworker:dispatch.
+  Accepts explicit argument from upstream: phase=<N> or level=L<N>. Falls back to context inference.
+  Ends by calling autoworker:dispatch.
+argument-hint: "[phase=<N>|level=L<N>]"
 ---
 
 # autoworker:checkpoint — Record Progress (Phase Check-off / Test Results)
@@ -27,10 +29,17 @@ Glob `subtask_*.md` (exclude subtask_template.md) →
 
 ### 2. Determine Upstream Type
 
-Prioritize conversation context; when context is insufficient, infer from file state:
+**Priority 1 — Explicit argument** (preferred, eliminates guesswork):
 
-- **Upstream is autoworker:code**: Conversation contains Phase implementation content; or file has unchecked Phase with corresponding code files already modified
-- **Upstream is autoworker:test**: Conversation contains test execution output; or file has all Phases checked but incomplete test layers
+- `phase=<N>` → upstream is autoworker:code, Phase N completed
+- `level=L<N>` → upstream is autoworker:test, test layer LN completed
+
+**Priority 2 — Conversation context inference** (fallback when no argument):
+
+- Conversation contains Phase implementation content → upstream is autoworker:code
+- Conversation contains test execution output → upstream is autoworker:test
+
+**If neither argument nor context is clear** → report error, do not guess. Ask upstream skill to re-invoke with explicit argument.
 
 ### 3a. Upstream is autoworker:code → Phase Check-off
 

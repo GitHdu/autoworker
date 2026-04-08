@@ -27,7 +27,23 @@ Glob `subtask_*.md` (exclude subtask_template.md) →
 ```
 
 - Test results section is empty → **FAIL**, prompt to complete tests and call `autoworker:checkpoint` first
-- Has test results → continue
+- Has test results → continue to Step 1.1
+
+### 1.1. L4 Mandatory Result Check
+
+**Hard rule**: L4 end-to-end test results MUST exist before gate-check can proceed.
+
+```
+Check "Test Results" section → L4 subsection:
+  - Has recorded results (PASS or FAIL entries) → continue
+  - Empty or missing → 🚨 IMMEDIATE FAIL
+    → Write "Gate result: FAIL" to Progress Log
+    → Report: "L4 end-to-end test results missing — 
+       cannot gate-check without L4. Dispatch will route to autoworker:test L4."
+    → Invoke autoworker:dispatch
+```
+
+**Why**: L4 is the ultimate safeguard ensuring the user path works. Allowing PASS without L4 means only compilation/unit-level checks were done — the user may encounter failures on first use.
 
 ### 1.5. Acceptance Criteria Traceability
 
@@ -138,5 +154,5 @@ Gate 3 FAIL
 
 - **gate-check is pure assessment**: Only assesses + writes results, does not make routing decisions
 - **Evidence is a hard constraint**: Each self-check item must have traceable evidence — "I think it's fine" doesn't count
-- **Gate result format is fixed**: Must be `Gate result: PASS` or `Gate result: FAIL` — autoworker:dispatch reads this exact format
+- **Gate result format**: SHOULD be `Gate result: PASS` or `Gate result: FAIL` (canonical format). autoworker:dispatch reads this line case-insensitively with whitespace tolerance, but always write the canonical format for consistency.
 - **Don't ask user "should I supplement?"**: Autonomously executable supplementary verification goes directly through autoworker:dispatch → autoworker:subtask-update loop

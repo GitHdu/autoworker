@@ -122,27 +122,31 @@ autoworker:subtask-plan
 
 while autoworker:dispatch (multi-subtask positioning):  # Re-read active subtask each time
     match state:
-        has incomplete Phase  → autoworker:code → autoworker:checkpoint → continue
-        has untested layer    → autoworker:test → autoworker:checkpoint → continue
-        all tests complete    → autoworker:gate-check (acceptance traceability → PASS/FAIL) → continue
+        L4 plan empty         → autoworker:subtask-plan → continue
+        has incomplete Phase  → autoworker:code
+                                 → autoworker:checkpoint phase=<N> → continue
+        has untested layer    → autoworker:test L<N>
+                                 → autoworker:checkpoint level=L<N> → continue
+        all tests complete    → autoworker:gate-check → continue
         Gate = FAIL           → autoworker:subtask-update → continue
-        Gate = PASS           → status: completed → output completion report → break
+        Gate = PASS           → autoworker:sync-docs
+                                 → output completion report → break
 ```
 
 | Skill | Responsibility | Chains To |
 |-------|---------------|-----------|
 | `autoworker:subtask-init` | Persist goals + acceptance criteria + assumptions, pause old active, run assumption verification | → `autoworker:subtask-plan` |
 | `autoworker:subtask-plan` | Silent failure analysis + traceability table + L1-L4 verification plan + coverage check + solution self-check | → `autoworker:dispatch` |
-| `autoworker:dispatch` | Multi-subtask positioning (active), read checkbox state, route (sole routing point) | → dynamic |
-| `autoworker:code` | Implement one Phase of code | → `autoworker:checkpoint` |
-| `autoworker:test` | Execute one test layer | → `autoworker:checkpoint` |
-| `autoworker:checkpoint` | Record keeping (check off Phase / write test results) | → `autoworker:dispatch` |
-| `autoworker:gate-check` | Acceptance criteria traceability + confidence self-assessment + supplementary verification + self-check. Sets completed on PASS | → `autoworker:dispatch` |
+| `autoworker:dispatch` | Multi-subtask positioning (active), read checkbox state, verify L4 plan exists, route (sole routing point). On PASS: sync-docs → completion report | → dynamic |
+| `autoworker:code` | Implement one Phase of code | → `autoworker:checkpoint phase=<N>` |
+| `autoworker:test` | Execute one test layer | → `autoworker:checkpoint level=L<N>` |
+| `autoworker:checkpoint` | Record keeping (check off Phase / write test results). Accepts `phase=<N>` or `level=L<N>` argument | → `autoworker:dispatch` |
+| `autoworker:gate-check` | Acceptance criteria traceability + L4 result mandatory check + confidence self-assessment + supplementary verification + self-check. Sets completed on PASS | → `autoworker:dispatch` |
 | `autoworker:subtask-update` | Add/correct subtask items | → `autoworker:dispatch` |
 
 **Hard rules**:
 - The execution chain uses **automatic skill chaining** — each skill forcibly invokes the next at the end. Manual step-skipping is neither needed nor allowed.
-- After each test layer passes, you must invoke `autoworker:checkpoint` (invoke the skill, do not manually edit subtask).
+- After each test layer passes, you must invoke `autoworker:checkpoint level=L<N>` (invoke the skill with level argument, do not manually edit subtask).
 - Before `autoworker:gate-check` PASS, you cannot claim "done".
 - Complete all self-executable verification autonomously before returning to user. Do not pause mid-chain to report.
 - **No manual skill substitution**: Do not "fill in the verification plan yourself" instead of autoworker:subtask-plan, do not "write test results yourself" instead of autoworker:checkpoint, do not "route yourself" instead of autoworker:dispatch.

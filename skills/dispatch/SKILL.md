@@ -52,14 +52,33 @@ dispatch (subtask: <filename>):
 - Gate: <empty/PASS/FAIL>
 ```
 
+### 2.5. Verification Plan Integrity Check
+
+**When all Phases are complete**, before routing to test or gate-check, validate that the verification plan has actual test items:
+
+```
+Check "Verification Plan" section → L4 subsection:
+  - Has checkbox items (`- [ ]` or `- [x]`) → OK, continue routing
+  - Empty (only heading, no items) → 🚨 STOP
+    → Report: "⚠️ Verification plan L4 section is empty — 
+       invoking autoworker:subtask-plan to complete it"
+    → Immediately invoke autoworker:subtask-plan
+    → DO NOT route to autoworker:test or autoworker:gate-check
+```
+
+**Why**: If subtask-plan wrote empty verification sections, dispatch would see "no untested layers" and skip directly to gate-check — bypassing the entire test cycle. This check prevents that silent bypass.
+
+**This is a forced chain branch**: When L4 is empty, dispatch MUST invoke `autoworker:subtask-plan` (not just report). After subtask-plan fills in the verification plan, it will chain back to dispatch, which re-reads file state and continues routing normally.
+
 ### 3. Fixed Priority Routing
 
 Evaluate in this order, **execute the first match, do not continue evaluating**:
 
+0. **Verification plan L4 empty?** (Step 2.5 STOP) → invoke `autoworker:subtask-plan`
 1. **Has incomplete Phase?** → invoke `autoworker:code`
-2. **All Phases complete, has untested layer?** → invoke `autoworker:test <level>` (pass the first incomplete level)
-3. **All tests complete, no Gate result?** → invoke `autoworker:gate-check`
-4. **Gate result = PASS?** → output completion report (**terminal point, do not invoke any further skill**)
+2. **All Phases complete, has untested layer?** (must pass Step 2.5 first) → invoke `autoworker:test <level>` (pass the first incomplete level)
+3. **All tests complete, no Gate result?** (must pass Step 2.5 first) → invoke `autoworker:gate-check`
+4. **Gate result = PASS?** → invoke `autoworker:sync-docs` first, then output completion report (**terminal point, do not invoke any further skill after sync-docs**)
 5. **Gate result = FAIL?** → invoke `autoworker:subtask-update`
 
 ### 4. Output Routing Decision
@@ -79,7 +98,12 @@ or
 ```
 or
 ```
+→ Invoking autoworker:sync-docs to sync tracking documents before completion report.
+```
+or
+```
 Task complete! Outputting completion report.
+→ To archive, invoke: autoworker:sync-docs archive
 ```
 or
 ```
@@ -90,15 +114,15 @@ or
 
 **After outputting the routing decision, immediately invoke the corresponding skill. Do not wait for user instructions, do nothing else.**
 
-Only exception: Gate PASS — directly output completion report, do not invoke any other skill.
+Only exception: Gate PASS — first invoke `autoworker:sync-docs` (no argument) to sync tracking documents, then output completion report with archive prompt. Do not invoke any other skill after sync-docs.
 
 ## Key Constraints
 
 - **Only read checkboxes, do not infer or remember**: State comes entirely from the file, not from conversation context
 - **Layers marked "skip" in the verification plan count as complete**: If the plan says "skip L2, reason: ..." and has no L2 items → treated as complete
 - **Accepts no arguments**: Entirely driven by file state
-- **Gate result reading method**: grep for `Gate result:` line, read PASS or FAIL
-- **PASS is the only terminal point**: Only when Gate PASS does dispatch terminate the loop
+- **Gate result reading method**: grep for `Gate result:` line (case-insensitive, trim whitespace), read PASS or FAIL. If format deviates slightly (extra spaces, capitalization), normalize it before routing. Matching pattern: line contains `gate result` (case-insensitive) AND contains `pass` or `fail`.
+- **PASS is the only terminal point**: Only when Gate PASS does dispatch terminate the loop. On PASS, invoke `autoworker:sync-docs` before the completion report.
 
 ## Important Notes
 

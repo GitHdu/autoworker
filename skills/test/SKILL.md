@@ -64,12 +64,14 @@ When all pass:
 L<N> tests passed:
 - <item 1>: <actual output summary> PASS
 - <item 2>: <actual output summary> PASS
-→ Invoking autoworker:checkpoint
+→ Invoking autoworker:checkpoint level=L<N>
 ```
 
-### 6. Chain: Immediately Invoke autoworker:checkpoint
+### 6. Chain: Immediately Invoke autoworker:checkpoint level=L\<N\>
 
-**After outputting the summary, immediately invoke `autoworker:checkpoint`. Do not wait for user instructions, do nothing else.**
+**After outputting the summary, immediately invoke `autoworker:checkpoint level=L<N>` (where N is the test layer just completed, e.g., `level=L2`). Do not wait for user instructions, do nothing else.**
+
+**The `level=L<N>` argument is mandatory** — it tells checkpoint exactly which test layer to record, eliminating guesswork from conversation context.
 
 ## Key Constraints
 
@@ -77,9 +79,10 @@ L<N> tests passed:
 - **Don't record results to file**: autoworker:checkpoint handles record-keeping
 - **Skipped layers won't be called**: dispatch already treats skipped layers as complete when reading
 - **Don't return to user mid-way**: Unless hitting a genuine blocker requiring human decision
+- **Chain fallback on blocker**: Even when hitting a genuine blocker, invoke `autoworker:checkpoint level=L<N>` FIRST to record partial progress (passed items so far). In the checkpoint record, explicitly log the blocker reason and what decision/input is needed. If dispatch routes back and the same blocker persists on re-entry, DO NOT keep re-running — return a clear blocker report to the user with: (1) what was completed, (2) what is blocked, (3) what decision/input is needed. Only skip checkpoint entirely if it cannot be invoked (extreme edge case).
 
 ## Important Notes
 
 - **Every item in the verification plan must be executed**: Cannot ad-hoc decide "this one doesn't need testing"
 - **L4 is mandatory**: Cannot skip L4 after L2 passes
-- **Chaining is mandatory**: Must invoke autoworker:checkpoint after completion, cannot skip or manually substitute
+- **Chaining is mandatory**: Must invoke autoworker:checkpoint with `level=L<N>` argument after completion, cannot skip or manually substitute

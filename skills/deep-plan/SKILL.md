@@ -154,6 +154,20 @@ L4: <specific items>
 
 **Write**: Write the above content to the plan file (path specified in Plan Mode system message).
 
+**Verify write** (mandatory — plan file is the sole input for the execution chain):
+
+1. After writing, **Read** the plan file back
+2. Confirm these sections exist and are non-empty:
+   - `## Motivation` (has 1+ sentences)
+   - `## Core Assumptions` (has table with 1+ rows)
+   - `## Acceptance Criteria` (has table with 1+ rows)
+   - `## Implementation Plan` (has at least one `### Phase`)
+   - `## Verification` (has L1-L4 items)
+3. **Any section missing or empty** → report which section failed, fix it immediately, re-verify
+4. **Only proceed to output after all sections verified**
+
+**Why**: If the plan file is incomplete or write fails silently, the entire execution chain (subtask-init extracts from plan, subtask-plan derives verification from plan) operates on incomplete data — garbage in, garbage out.
+
 **Output**:
 
 ```

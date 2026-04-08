@@ -55,12 +55,14 @@ Read all Steps in the Phase, implement one by one:
 Phase X code implementation complete:
 - Step X.1: <brief change description>
 - Step X.2: <brief change description>
-→ Invoking autoworker:checkpoint
+→ Invoking autoworker:checkpoint phase=X
 ```
 
-### 4. Chain: Immediately Invoke autoworker:checkpoint
+### 4. Chain: Immediately Invoke autoworker:checkpoint phase=\<N\>
 
-**After outputting the summary, immediately invoke `autoworker:checkpoint`. Do not wait for user instructions, do nothing else.**
+**After outputting the summary, immediately invoke `autoworker:checkpoint phase=<N>` (where N is the Phase number just completed). Do not wait for user instructions, do nothing else.**
+
+**The `phase=<N>` argument is mandatory** — it tells checkpoint exactly which Phase to check off, eliminating guesswork from conversation context.
 
 ## Key Constraints
 
@@ -68,9 +70,10 @@ Phase X code implementation complete:
 - **Only write code**: Don't check boxes, don't run tests, don't make routing decisions
 - **Self-debug when hitting issues**: 2 consecutive failures with same approach → enter diagnostic mode (make assumptions explicit → minimum observable unit → build diagnostic tool)
 - **Don't return to user mid-way**: Unless hitting a genuine blocker requiring human decision
+- **Chain fallback on blocker**: Even when hitting a genuine blocker, invoke `autoworker:checkpoint phase=<N>` FIRST to record partial progress (completed Steps so far). In the checkpoint record, explicitly log the blocker reason and what decision/input is needed. If dispatch routes back and the same blocker persists on re-entry, DO NOT keep re-running — return a clear blocker report to the user with: (1) what was completed, (2) what is blocked, (3) what decision/input is needed. Only skip checkpoint entirely if it cannot be invoked (extreme edge case).
 
 ## Important Notes
 
 - **Phase granularity**: A Phase typically contains 2-5 Steps, each Step is a specific file change
 - **Files in current Phase**: If a Step says "modify file X", must Read the file before Edit
-- **Chaining is mandatory**: Must invoke autoworker:checkpoint after completion, cannot skip or manually substitute
+- **Chaining is mandatory**: Must invoke autoworker:checkpoint with `phase=<N>` argument after completion, cannot skip or manually substitute
