@@ -5,7 +5,7 @@ description: >
   implementation task. Provides automatic task decomposition, code implementation,
   testing (L1-L4), and iterative quality gates until completion. Invoke with /autoworker.
 user-invocable: true
-version: "1.0.0"
+version: "1.1.0"
 author: "GitHdu"
 license: "MIT"
 tags: workflow, automation, quality-gates, testing
