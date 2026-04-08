@@ -31,6 +31,27 @@ if [ -n "$subtask_files" ]; then
   done
 fi
 
+# 🚨 Signal 3: Task given but no subtask created (WORKFLOW VIOLATION DETECTION)
+# Check if there are recent conversation indicators of a task but no active subtask
+if [ -f "task_plan.md" ] || [ -f ".claude/plans/"*.md 2>/dev/null ]; then
+  has_active_subtask=false
+  for sf in $subtask_files; do
+    if grep -q "status: active" "$sf" 2>/dev/null; then
+      has_active_subtask=true
+      break
+    fi
+  done
+  
+  if [ "$has_active_subtask" = false ]; then
+    echo ""
+    echo "🚨 [autoworker] WORKFLOW VIOLATION DETECTED:"
+    echo "   Plan file exists but NO active subtask found."
+    echo "   If user gave you a task, you MUST invoke autoworker:subtask-init FIRST."
+    echo "   Do NOT read code, do NOT investigate, do NOT write code."
+    echo "   → Invoke: autoworker:subtask-init"
+  fi
+fi
+
 # Generic reminder (always output — short and effective)
 echo ""
 echo "💡 [autoworker] If there are discussion conclusions not yet in files (plan decisions, scope changes, findings), persist them NOW."

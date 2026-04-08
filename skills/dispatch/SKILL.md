@@ -18,7 +18,12 @@ Reads subtask.md checkbox state and routes to the next skill based on fixed prio
 
 ```
 Glob `subtask_*.md` (exclude subtask_template.md) →
-  0 found → stop, prompt to create subtask
+  0 found → 🚨 STOP: No subtask document exists
+            → Check: Did user provide a NEW task?
+            → YES: Report error "Missing subtask-init step" 
+                   → Instruct to invoke autoworker:subtask-init first
+                   → DO NOT proceed with routing
+            → NO: Normal conversation (no task to dispatch)
   1 found → use directly (backward compatible)
   multiple → grep `status:` to filter:
     - Files without status field treated as active (backward compatible)
@@ -30,6 +35,11 @@ Glob `subtask_*.md` (exclude subtask_template.md) →
 - Verification plan section L1-L4 checkbox states
 - Whether a `Gate result:` line exists and its value
 ```
+
+**🚨 CRITICAL CHECK**: If no subtask files found AND user has given a task:
+- This is a WORKFLOW VIOLATION
+- Do NOT attempt to proceed
+- Report: "⚠️ Workflow error: No subtask document found. Please invoke `autoworker:subtask-init` first to create the subtask document before execution."
 
 ### 2. Status Summary
 

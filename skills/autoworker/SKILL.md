@@ -75,6 +75,36 @@ hooks:
 >
 > **Verified failure mode**: Claude sees plan → wants to "investigate the current state first" → finishes investigating and starts coding directly → subtask.md never created → no execution chain constraints → no gate-check quality gate.
 
+### 🚨 MANDATORY FIRST ACTION CHECK
+
+**Before doing ANYTHING else (no reading code, no investigating, no writing code):**
+
+```
+DECISION TREE (execute in order, cannot skip):
+
+1. Does user message contain a NEW task with specific requirements?
+   - YES → IMMEDIATELY invoke autoworker:subtask-init
+     ⚠️ STOP: Do NOT read existing code first
+     ⚠️ STOP: Do NOT check project structure first
+     ⚠️ STOP: Do NOT "understand the current state" first
+   - NO → Continue to step 2
+
+2. Are there subtask_*.md files in the project root?
+   - YES with status:active → invoke autoworker:dispatch
+   - YES but all status:completed → ask user if continuing old task or starting new
+   - NO → Normal conversation
+```
+
+**FORBIDDEN ACTIONS before subtask-init (when user has new task):**
+- ❌ Reading existing code files to "understand the codebase"
+- ❌ Using Glob/Grep to "explore the project structure"
+- ❌ Checking CLAUDE.md to "see what exists"
+- ❌ Asking user clarifying questions about the task (should be in plan already)
+- ❌ Writing any code modifications
+- ❌ Making any file changes except subtask.md creation
+
+**HARD RULE**: If user gives a new task and you do anything other than invoke `autoworker:subtask-init` as your first action, you are violating the execution chain protocol.
+
 ### Execution Chain (Skill Auto-Chaining + Self-Iteration Loop)
 
 **Core idea**: The execution chain is not linear — it's a **self-iteration loop**. Write code → test → check → find gaps → update plan → write more code → test again... until quality meets the bar, then deliver to user. Each step is enforced by skill chaining, leaving no room to skip steps.
@@ -117,6 +147,7 @@ while autoworker:dispatch (multi-subtask positioning):  # Re-read active subtask
 - Complete all self-executable verification autonomously before returning to user. Do not pause mid-chain to report.
 - **No manual skill substitution**: Do not "fill in the verification plan yourself" instead of autoworker:subtask-plan, do not "write test results yourself" instead of autoworker:checkpoint, do not "route yourself" instead of autoworker:dispatch.
 - **No chain interruption for context concerns**: After entering Path B, do not suggest /clear, do not say "context is getting full, suggest breaking up", do not stop the execution chain citing context. The 1M context has automatic compression — context management is the system's job, not yours. Your sole responsibility is to run the execution chain until gate-check PASS. (Note: In interactive discussion, suggesting to split genuinely large tasks is reasonable — this rule only constrains the execution chain.)
+- **🚨 SUBTASK.MD MANDATORY**: No code implementation, no testing, no verification can occur WITHOUT an active subtask.md file. If subtask.md doesn't exist, the ONLY valid action is to invoke `autoworker:subtask-init`.
 
 ### Testing: 4 Progressive Layers
 
@@ -267,7 +298,8 @@ Mandatory flow after /clear (in order, no skipping):
 
 1. First determine the user's current message intent (highest priority):
    a. User message contains an explicit new execution task (has plan, has specific requirements, "Implement X")
-      → autoworker:subtask-init (create new subtask.md, start new execution chain)
+      → 🚨 IMMEDIATELY invoke autoworker:subtask-init (create new subtask.md, start new execution chain)
+      → ⚠️ FORBIDDEN: Reading code, exploring project, checking existing files BEFORE subtask-init
       → Old subtask files don't affect the new task (they're work documents for different tasks)
    b. User has no new task (empty message, pure question, says "continue", etc.)
       → continue to step 2
@@ -277,8 +309,26 @@ Mandatory flow after /clear (in order, no skipping):
    → Does not exist → normal conversation
 ```
 
+**🚨 VALIDATION CHECK (Self-Correction Protocol)**:
+
+After any action in step 1, verify:
+- ✅ Did I invoke autoworker:subtask-init as my FIRST action for a new task?
+- ✅ Did I avoid reading/investigating code before subtask-init?
+- ✅ Did I prioritize user intent over existing file state?
+
+If ANY answer is NO → STOP immediately → invoke autoworker:subtask-init now.
+
 **Forbidden**: Skipping this flow to jump straight into investigation or coding.
 
 **Verified failure modes**:
 1. Claude wants to "investigate current state before creating subtask" → finishes investigating and starts coding directly → subtask never created → no execution chain → no quality gates.
 2. Old subtask exists + user gave new task → Claude thinks it should dispatch to old subtask → skips autoworker:subtask-init → new task has no subtask.md → no execution chain. Root cause: File state prioritized over user intent.
+
+**🚨 EMERGENCY CORRECTION (If you realize you skipped subtask-init)**:
+
+If you've already started coding/investigating WITHOUT creating subtask:
+1. STOP all current work immediately
+2. Do NOT save any code changes made
+3. Invoke autoworker:subtask-init NOW
+4. Explain to user: "Correcting workflow — creating subtask document before continuing"
+5. Continue execution chain normally

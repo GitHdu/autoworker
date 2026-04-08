@@ -4,11 +4,33 @@ description: |
   Create subtask document (first half): user confirmation, goals, assumptions.
   Auto-runs assumption verification experiments and fills in results.
   Call after Gate 1.1 (user confirmation) is done, before writing any code.
+  🚨 MANDATORY: Must be invoked BEFORE any code investigation or modification for new tasks.
 ---
 
 # autoworker:subtask-init — Create Subtask First Half (Gate 1.3 Step A+B)
 
 After Plan Mode discussion is complete and user has confirmed direction, invoke this skill to create the first half of subtask.md.
+
+## 🚨 MANDATORY EXECUTION GUARD
+
+**This skill MUST be invoked as the FIRST action when:**
+- ✅ User provides a new execution task (with or without plan file)
+- ✅ User asks to "continue" after /clear
+- ✅ New session starts with task requirements
+
+**BEFORE invoking this skill, you MUST NOT:**
+- ❌ Read any code files to "understand the codebase"
+- ❌ Use Glob/Grep to explore project structure
+- ❌ Check existing implementations
+- ❌ Ask user for clarification (requirements should be clear)
+- ❌ Start writing code
+- ❌ Make any modifications to the project
+
+**VIOLATION PROTOCOL**: If you realize you've done any of the above before invoking subtask-init:
+1. STOP immediately
+2. Discard any code changes made
+3. Invoke autoworker:subtask-init NOW
+4. Continue execution chain
 
 ## Execution Flow
 
