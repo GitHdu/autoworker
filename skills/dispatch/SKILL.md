@@ -112,9 +112,23 @@ or
 
 ### 5. Execute Route
 
-**After outputting the routing decision, immediately invoke the corresponding skill. Do not wait for user instructions, do nothing else.**
+**After outputting the routing decision, immediately invoke the corresponding skill IN THE SAME RESPONSE. Do not wait for user instructions, do nothing else.**
+
+**🚨 SAME-RESPONSE RULE**: The routing decision AND the next-skill invocation MUST be in the same response. Output the routing decision, then output `[CHAIN → target_skill]`, then invoke the target skill. NEVER output the routing decision alone and stop.
 
 Only exception: Gate PASS — first invoke `autoworker:sync-docs` (no argument) to sync tracking documents, then output completion report with archive prompt. Do not invoke any other skill after sync-docs.
+
+## Chain Recovery Protocol
+
+When `autoworker:dispatch` is called after a chain interruption (e.g., user message broke the chain, system error, or session recovery):
+
+1. **Detect interruption**: If this dispatch call is NOT immediately preceded by another skill's chain step (i.e., there's a gap in the chain), this is a recovery scenario
+2. **Read subtask state**: Re-read the subtask file to determine exactly where execution left off
+3. **Resume immediately**: Route to the next skill based on current file state — do not ask user, do not report "chain was broken"
+4. **Output recovery indicator**: `[CHAIN RECOVERY → target_skill]` to signal chain is resuming
+5. **Never restart**: Resume from current state, never go back to the beginning
+
+**Key insight**: dispatch is stateless — it always reads from disk. This means it naturally supports chain recovery. Any time dispatch is called, regardless of why, it can determine the correct next step from the subtask file.
 
 ## Key Constraints
 

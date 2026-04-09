@@ -134,7 +134,9 @@ Subtask first half created: subtask_<sequence>_<name>.md
 
 ### 9. Chain: Immediately Invoke autoworker:subtask-plan
 
-**After outputting the summary above, immediately invoke `autoworker:subtask-plan`. Do not wait for user instructions, do nothing else.**
+**After outputting the summary above, immediately invoke `autoworker:subtask-plan` IN THE SAME RESPONSE. Do not wait for user instructions, do nothing else.**
+
+**🚨 SAME-RESPONSE RULE**: The summary AND the `autoworker:subtask-plan` invocation MUST be in the same response. Output the summary, then output `[CHAIN → subtask-plan]`, then invoke `autoworker:subtask-plan`. NEVER output the summary alone and stop.
 
 ## Important Notes
 

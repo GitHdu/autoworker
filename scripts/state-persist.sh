@@ -55,3 +55,23 @@ fi
 # Generic reminder (always output — short and effective)
 echo ""
 echo "💡 [autoworker] If there are discussion conclusions not yet in files (plan decisions, scope changes, findings), persist them NOW."
+
+# 🚨 Signal 4: Chain interruption detection
+# If the execution chain was running but appears to have stopped mid-way,
+# remind Claude to resume via autoworker:dispatch
+if [ -n "$subtask_files" ]; then
+  for sf in $subtask_files; do
+    if grep -q "status: active" "$sf" 2>/dev/null; then
+      # Active subtask exists — chain should be running
+      # Check if there are incomplete phases (unchecked steps)
+      incomplete=$(grep -c '^- \[ \]' "$sf" 2>/dev/null || echo "0")
+      has_gate_pass=$(grep -ci 'gate result.*pass' "$sf" 2>/dev/null || echo "0")
+      if [ "$incomplete" -gt 0 ] && [ "$has_gate_pass" -eq 0 ]; then
+        echo ""
+        echo "🔗 [autoworker] CHAIN INCOMPLETE: Active subtask ($sf) has $incomplete incomplete steps and no Gate PASS."
+        echo "   The execution chain should continue. Invoke autoworker:dispatch to resume."
+        echo "   Do NOT start a new task. Do NOT ask user what to do. Resume the chain."
+      fi
+    fi
+  done
+fi

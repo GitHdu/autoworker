@@ -34,3 +34,16 @@ You MUST output this EXACT format as your FIRST response content:
 ### Step 4: Load Skill
 
 After completing Steps 1-3, invoke the `autoworker:autoworker` skill and follow it exactly.
+
+### Step 5: Chain Continuation (CRITICAL)
+
+**Once the execution chain starts, it MUST run continuously to completion (gate-check PASS).**
+
+- Each skill's summary AND next-skill invocation MUST be in the **SAME response**
+- Always output `[CHAIN → next_skill]` before invoking the next skill
+- NEVER pause after a summary to wait for user response
+- NEVER ask "Should I continue?" mid-chain
+- If the chain is interrupted, resume immediately by invoking `autoworker:dispatch`
+- The chain only terminates when gate-check returns PASS
+
+This rule overrides any default behavior that might cause the chain to pause between skills.

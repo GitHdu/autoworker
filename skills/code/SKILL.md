@@ -60,9 +60,11 @@ Phase X code implementation complete:
 
 ### 4. Chain: Immediately Invoke autoworker:checkpoint phase=\<N\>
 
-**After outputting the summary, immediately invoke `autoworker:checkpoint phase=<N>` (where N is the Phase number just completed). Do not wait for user instructions, do nothing else.**
+**After outputting the summary, immediately invoke `autoworker:checkpoint phase=<N>` IN THE SAME RESPONSE (where N is the Phase number just completed). Do not wait for user instructions, do nothing else.**
 
 **The `phase=<N>` argument is mandatory** — it tells checkpoint exactly which Phase to check off, eliminating guesswork from conversation context.
+
+**🚨 SAME-RESPONSE RULE**: The summary AND the `autoworker:checkpoint` invocation MUST be in the same response. Output the summary, then output `[CHAIN → checkpoint phase=<N>]`, then invoke `autoworker:checkpoint phase=<N>`. NEVER output the summary alone and stop.
 
 ## Key Constraints
 

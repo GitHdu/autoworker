@@ -82,7 +82,9 @@ Checkpoint recorded:
 
 ### 6. Chain: Immediately Invoke autoworker:dispatch
 
-**After outputting the summary, immediately invoke `autoworker:dispatch`. Do not wait for user instructions, do nothing else.**
+**After outputting the summary, immediately invoke `autoworker:dispatch` IN THE SAME RESPONSE. Do not wait for user instructions, do nothing else.**
+
+**🚨 SAME-RESPONSE RULE**: The summary AND the `autoworker:dispatch` invocation MUST be in the same response. Output the summary, then output `[CHAIN → dispatch]`, then invoke `autoworker:dispatch`. NEVER output the summary alone and stop.
 
 ## Important Notes
 

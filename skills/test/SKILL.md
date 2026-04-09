@@ -69,9 +69,11 @@ L<N> tests passed:
 
 ### 6. Chain: Immediately Invoke autoworker:checkpoint level=L\<N\>
 
-**After outputting the summary, immediately invoke `autoworker:checkpoint level=L<N>` (where N is the test layer just completed, e.g., `level=L2`). Do not wait for user instructions, do nothing else.**
+**After outputting the summary, immediately invoke `autoworker:checkpoint level=L<N>` IN THE SAME RESPONSE (where N is the test layer just completed, e.g., `level=L2`). Do not wait for user instructions, do nothing else.**
 
 **The `level=L<N>` argument is mandatory** — it tells checkpoint exactly which test layer to record, eliminating guesswork from conversation context.
+
+**🚨 SAME-RESPONSE RULE**: The summary AND the `autoworker:checkpoint` invocation MUST be in the same response. Output the summary, then output `[CHAIN → checkpoint level=L<N>]`, then invoke `autoworker:checkpoint level=L<N>`. NEVER output the summary alone and stop.
 
 ## Key Constraints
 

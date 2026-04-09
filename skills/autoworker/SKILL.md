@@ -170,10 +170,60 @@ while autoworker:dispatch (multi-subtask positioning):  # Re-read active subtask
 - The execution chain uses **automatic skill chaining** — each skill forcibly invokes the next at the end. Manual step-skipping is neither needed nor allowed.
 - After each test layer passes, you must invoke `autoworker:checkpoint level=L<N>` (invoke the skill with level argument, do not manually edit subtask).
 - Before `autoworker:gate-check` PASS, you cannot claim "done".
-- Complete all self-executable verification autonomously before returning to user. Do not pause mid-chain to report.
+- Complete all self-executable verification autonomously before returning to user. Do not pause mid-chain to report. Each skill's summary AND next-skill invocation MUST be in the SAME response — never output a summary and stop.
 - **No manual skill substitution**: Do not "fill in the verification plan yourself" instead of autoworker:subtask-plan, do not "write test results yourself" instead of autoworker:checkpoint, do not "route yourself" instead of autoworker:dispatch.
 - **No chain interruption for context concerns**: After entering Path B, do not suggest /clear, do not say "context is getting full, suggest breaking up", do not stop the execution chain citing context. The 1M context has automatic compression — context management is the system's job, not yours. Your sole responsibility is to run the execution chain until gate-check PASS. (Note: In interactive discussion, suggesting to split genuinely large tasks is reasonable — this rule only constrains the execution chain.)
 - **🚨 SUBTASK.MD MANDATORY**: No code implementation, no testing, no verification can occur WITHOUT an active subtask.md file. If subtask.md doesn't exist, the ONLY valid action is to invoke `autoworker:subtask-init`.
+
+### 🔗 Chain Continuation Guarantee (Anti-Interruption)
+
+**Core principle**: Once the execution chain starts, it MUST run to completion (gate-check PASS) without any interruption. The chain is a single continuous process, not a series of pauses.
+
+**🚨 SAME-RESPONSE RULE** (most critical — prevents 90% of interruptions):
+
+> Each skill's output summary AND its next-skill invocation MUST appear in the **SAME response**. You MUST NOT output a summary then stop and wait for user response. The skill invocation is NOT optional — it is the mandatory continuation of the current action.
+
+```
+❌ WRONG (causes interruption):
+  "Phase 1 code implementation complete."
+  [stops, waits for user]
+
+✅ CORRECT (continuous chain):
+  "Phase 1 code implementation complete."
+  → Invoking autoworker:checkpoint phase=1
+  [immediately invokes checkpoint in same response]
+```
+
+**Chain State Indicator** — always output this when transitioning between skills:
+```
+[CHAIN → next_skill_name]
+```
+This visible marker serves as:
+1. A self-commitment that you are continuing the chain
+2. A signal that if the response ends here, the chain is broken
+3. A recovery point — if interrupted, look for the last `[CHAIN → ...]` to know where to resume
+
+**Forbidden during chain execution**:
+- ❌ Pausing after a skill summary to "let the user review"
+- ❌ Asking "Should I continue?" or "Ready for the next step?"
+- ❌ Waiting for user confirmation before invoking the next skill
+- ❌ Outputting a summary without the chain indicator and next-skill invocation
+- ❌ Responding to unrelated user messages mid-chain (handle after chain completes)
+- ❌ Suggesting to "take a break" or "review progress so far"
+
+**Chain Resumption After Interruption**:
+If the chain is broken (by system error, user message, or any other reason):
+1. Look for the last `[CHAIN → ...]` indicator in conversation
+2. If found → that's where you should resume. Invoke that skill immediately.
+3. If not found → invoke `autoworker:dispatch` to re-read subtask state and determine next step
+4. **Never ask the user "where were we?"** — read the subtask file to determine current state
+5. **Never start over from the beginning** — resume from where the chain broke
+
+**User message during chain**: If the user sends a message while the chain is executing:
+- If it's a genuine blocker/question → complete current skill's chain step first, then respond
+- If it's a mid-course correction → follow the Mid-Course Correction Protocol (Section above)
+- If it's unrelated → acknowledge briefly, continue chain, handle after chain completes
+- **Never abandon the chain mid-step to have a conversation**
 
 ### Testing: 4 Progressive Layers
 

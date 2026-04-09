@@ -124,7 +124,9 @@ Source label format:
 
 ### C2. Chain: Immediately Invoke autoworker:dispatch
 
-**After updating subtask, immediately invoke `autoworker:dispatch`. Do not wait for user instructions, do nothing else.**
+**After updating subtask, immediately invoke `autoworker:dispatch` IN THE SAME RESPONSE. Do not wait for user instructions, do nothing else.**
+
+**🚨 SAME-RESPONSE RULE**: The update summary AND the `autoworker:dispatch` invocation MUST be in the same response. Output the update, then output `[CHAIN → dispatch]`, then invoke `autoworker:dispatch`. NEVER output the update alone and stop.
 
 ## Important Notes
 

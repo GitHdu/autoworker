@@ -148,7 +148,9 @@ Gate 3 FAIL
 
 ### 7. Chain: Immediately Invoke autoworker:dispatch
 
-**After outputting the result, immediately invoke `autoworker:dispatch`. Do not wait for user instructions, do nothing else.**
+**After outputting the result, immediately invoke `autoworker:dispatch` IN THE SAME RESPONSE. Do not wait for user instructions, do nothing else.**
+
+**🚨 SAME-RESPONSE RULE**: The gate-check result AND the `autoworker:dispatch` invocation MUST be in the same response. Output the result, then output `[CHAIN → dispatch]`, then invoke `autoworker:dispatch`. NEVER output the result alone and stop.
 
 ## Important Notes
 
