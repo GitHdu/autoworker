@@ -18,31 +18,50 @@ for pf in .claude/plans/*.md; do
 done
 
 # Signal 2: Active subtask with no entries for today
-subtask_files=$(ls subtask_*.md 2>/dev/null | grep -v template)
-if [ -n "$subtask_files" ]; then
-  today=$(date '+%Y-%m-%d')
-  for sf in $subtask_files; do
-    has_today=$(grep -c "$today" "$sf" 2>/dev/null || echo "0")
-    if [ "$has_today" -eq 0 ]; then
+# Signal 3: Workflow violation (plan exists but no active subtask)
+# Signal 4: Chain interruption detection
+# NOTE: Signals 2-4 are FALLBACK checks. Claude's Grep/Read tools are faster and preferred.
+today=$(date '+%Y-%m-%d')
+has_active_subtask=false
+
+for sf in subtask_*.md; do
+  [[ "$sf" == *template* ]] && continue
+  [ -f "$sf" ] || continue
+
+  # Single-pass scan: collect all signals in one awk run
+  check_result=$(awk -v today="$today" '
+    BEGIN { is_active=0; incomplete=0; has_pass=0; has_today=0 }
+    /^status: active/ { is_active = 1 }
+    /^- \[ \]/ { incomplete++ }
+    /gate result.*pass/i { has_pass = 1 }
+    $0 ~ today { has_today = 1 }
+    END { print is_active, incomplete, has_pass, has_today }
+  ' "$sf" 2>/dev/null)
+  read is_active incomplete has_pass has_today <<< "$check_result"
+
+  # Signal 2: no entries for today
+  if [ "${has_today:-0}" -eq 0 ]; then
+    echo ""
+    echo "⚠️ [autoworker] Subtask ($sf) has no entries for today."
+    echo "   If you made progress, update it before /clear."
+  fi
+
+  # Signal 4: chain interruption
+  if [ "${is_active:-0}" -eq 1 ]; then
+    has_active_subtask=true
+    if [ "${incomplete:-0}" -gt 0 ] && [ "${has_pass:-0}" -eq 0 ]; then
       echo ""
-      echo "⚠️ [autoworker] Subtask ($sf) has no entries for today."
-      echo "   If you made progress, update it before /clear."
+      echo "🔗 [autoworker] CHAIN INCOMPLETE: Active subtask ($sf) has $incomplete incomplete steps and no Gate PASS."
+      echo "   The execution chain should continue. Invoke autoworker:dispatch to resume."
+      echo "   Do NOT start a new task. Do NOT ask user what to do. Resume the chain."
     fi
-  done
-fi
+  fi
+done
 
 # 🚨 Signal 3: Task given but no subtask created (WORKFLOW VIOLATION DETECTION)
-# Check if there are recent conversation indicators of a task but no active subtask
-if [ -f "task_plan.md" ] || [ -f ".claude/plans/"*.md 2>/dev/null ]; then
-  has_active_subtask=false
-  for sf in $subtask_files; do
-    if grep -q "status: active" "$sf" 2>/dev/null; then
-      has_active_subtask=true
-      break
-    fi
-  done
-  
+if [ -f "task_plan.md" ] || ls .claude/plans/*.md 2>/dev/null | head -1 | grep -q .; then
   if [ "$has_active_subtask" = false ]; then
+  
     echo ""
     echo "🚨 [autoworker] WORKFLOW VIOLATION DETECTED:"
     echo "   Plan file exists but NO active subtask found."
@@ -55,23 +74,3 @@ fi
 # Generic reminder (always output — short and effective)
 echo ""
 echo "💡 [autoworker] If there are discussion conclusions not yet in files (plan decisions, scope changes, findings), persist them NOW."
-
-# 🚨 Signal 4: Chain interruption detection
-# If the execution chain was running but appears to have stopped mid-way,
-# remind Claude to resume via autoworker:dispatch
-if [ -n "$subtask_files" ]; then
-  for sf in $subtask_files; do
-    if grep -q "status: active" "$sf" 2>/dev/null; then
-      # Active subtask exists — chain should be running
-      # Check if there are incomplete phases (unchecked steps)
-      incomplete=$(grep -c '^- \[ \]' "$sf" 2>/dev/null || echo "0")
-      has_gate_pass=$(grep -ci 'gate result.*pass' "$sf" 2>/dev/null || echo "0")
-      if [ "$incomplete" -gt 0 ] && [ "$has_gate_pass" -eq 0 ]; then
-        echo ""
-        echo "🔗 [autoworker] CHAIN INCOMPLETE: Active subtask ($sf) has $incomplete incomplete steps and no Gate PASS."
-        echo "   The execution chain should continue. Invoke autoworker:dispatch to resume."
-        echo "   Do NOT start a new task. Do NOT ask user what to do. Resume the chain."
-      fi
-    fi
-  done
-fi

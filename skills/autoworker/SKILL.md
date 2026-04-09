@@ -298,6 +298,26 @@ Approach: Delete old output → re-run affected workflow → grep to confirm cha
 3. **Persist discussion results in real-time** — after each deep-plan Phase completes, write conclusions to the plan file immediately. Don't wait until the end to write everything at once. Important findings → write to findings.md immediately.
 4. **"Persisted" = written to file** — "remembering" in context does NOT count. Only Write/Edit to a disk file counts as persisted.
 
+### Chain State Check (Before Session End)
+
+**Before the session ends** (Stop hook fires), quickly verify chain integrity using Claude's native tools (faster than shell script fallback):
+
+```
+# Preferred: Use Grep tool (fast, indexed)
+Grep '^- \[ \]' in subtask_*.md → count incomplete steps
+Grep 'gate result.*pass' in subtask_*.md → check if Gate PASS exists
+
+# If Grep tool unavailable, fall back to Read tool
+Read subtask_*.md → scan for unchecked steps and Gate result
+```
+
+**If active subtask has incomplete steps and no Gate PASS** → output reminder:
+```
+🔗 Chain incomplete: subtask has <N> unchecked steps. Should I continue? [Y/N]
+```
+
+**Fallback**: The `state-persist.sh` hook script will run automatically as a safety net, but Claude's native tools are preferred (faster, no process startup overhead).
+
 ### Verified Failure Mode
 Claude feels context is too long → suggests /clear → user does it → new session remembers nothing → previous plan discussion completely wasted. Root cause: discussion conclusions were only in context, never written to files.
 

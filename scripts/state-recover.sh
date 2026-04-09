@@ -23,18 +23,24 @@ echo "   ask the user to re-state it — do NOT guess from memory."
 echo ""
 
 # 🔗 Chain recovery check
-subtask_files=$(ls subtask_*.md 2>/dev/null | grep -v template)
-if [ -n "$subtask_files" ]; then
-  for sf in $subtask_files; do
-    if grep -q "status: active" "$sf" 2>/dev/null; then
-      incomplete=$(grep -c '^- \[ \]' "$sf" 2>/dev/null || echo "0")
-      has_gate_pass=$(grep -ci 'gate result.*pass' "$sf" 2>/dev/null || echo "0")
-      if [ "$incomplete" -gt 0 ] && [ "$has_gate_pass" -eq 0 ]; then
-        echo "🔗 [autoworker] CHAIN RECOVERY NEEDED: Active subtask ($sf) has $incomplete incomplete steps."
-        echo "   → Invoke autoworker:dispatch IMMEDIATELY to resume the execution chain."
-        echo "   → Do NOT investigate. Do NOT ask user. Just resume."
-        echo ""
-      fi
-    fi
-  done
-fi
+for sf in subtask_*.md; do
+  [[ "$sf" == *template* ]] && continue
+  [ -f "$sf" ] || continue
+
+  # Single-pass scan with initialized variables (avoids empty-string comparison error)
+  check_result=$(awk '
+    BEGIN { is_active=0; incomplete=0; has_pass=0 }
+    /^status: active/ { is_active = 1 }
+    /^- \[ \]/ { incomplete++ }
+    /gate result.*pass/i { has_pass = 1 }
+    END { print is_active, incomplete, has_pass }
+  ' "$sf" 2>/dev/null)
+  read is_active incomplete has_pass <<< "$check_result"
+
+  if [ "${is_active:-0}" -eq 1 ] && [ "${incomplete:-0}" -gt 0 ] && [ "${has_pass:-0}" -eq 0 ]; then
+    echo "🔗 [autoworker] CHAIN RECOVERY NEEDED: Active subtask ($sf) has $incomplete incomplete steps."
+    echo "   → Invoke autoworker:dispatch IMMEDIATELY to resume the execution chain."
+    echo "   → Do NOT investigate. Do NOT ask user. Just resume."
+    echo ""
+  fi
+done
