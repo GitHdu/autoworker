@@ -5,7 +5,7 @@ description: >
   implementation task. Provides automatic task decomposition, code implementation,
   testing (L1-L4), and iterative quality gates until completion. Invoke with /autoworker.
 user-invocable: true
-version: "1.1.0"
+version: "1.2.0"
 author: "GitHdu"
 license: "MIT"
 tags: workflow, automation, quality-gates, testing
@@ -25,6 +25,26 @@ hooks:
 ---
 
 # Autoworker: Auto-Loop Execution Workflow
+
+## 🔒 ABSOLUTE FIRST — Output Lock (Before Reading Anything Else)
+
+**YOU MUST output the Lock Statement BEFORE doing ANYTHING — before reading code, before thinking, before any tool call.**
+
+```
+🔒 AUTOWORKER LOCK: [NEW_TASK | RESUME | CONVERSATION]
+→ Action: [subtask-init | dispatch | normal]
+```
+
+**Lock determines your ONLY allowed next action:**
+- `NEW_TASK` → Your next tool call MUST be `autoworker:subtask-init`. Nothing else is allowed.
+- `RESUME` → Glob `subtask_*.md` → `autoworker:dispatch`
+- `CONVERSATION` → Respond normally
+
+**Self-test**: If your Lock says `NEW_TASK` and your next action is NOT invoking `autoworker:subtask-init`, you are in VIOLATION. STOP everything and invoke `autoworker:subtask-init` now.
+
+**Why this exists**: Without the Lock output, you will unconsciously investigate the codebase first, then "forget" to create the subtask document. The Lock is a cognitive anchor that forces you to commit to the correct action BEFORE your default behavior kicks in.
+
+---
 
 > **Two paths**: Plan Mode (discussion) → /clear → Execution (implementation).
 > /clear is the boundary. Different paths, completely different behaviors.
@@ -75,7 +95,9 @@ hooks:
 >
 > **Verified failure mode**: Claude sees plan → wants to "investigate the current state first" → finishes investigating and starts coding directly → subtask.md never created → no execution chain constraints → no gate-check quality gate.
 
-### 🚨 MANDATORY FIRST ACTION CHECK
+### 🚨 MANDATORY FIRST ACTION CHECK (Redundant with Lock — Intentional)
+
+**If you did NOT output the Lock Statement above, STOP and output it NOW.**
 
 **Before doing ANYTHING else (no reading code, no investigating, no writing code):**
 
@@ -294,6 +316,12 @@ Consult these files for detailed examples and methodology when needed:
 ## Recovery After /clear
 
 **Mandatory first step after /clear or new session (before any investigation, reading code, or writing code):**
+
+**🔒 FIRST: Output the Lock Statement (same as top of this document):**
+```
+🔒 AUTOWORKER LOCK: [NEW_TASK | RESUME | CONVERSATION]
+→ Action: [subtask-init | dispatch | normal]
+```
 
 **Core principle: The user's current message intent > stale file state on disk.**
 
