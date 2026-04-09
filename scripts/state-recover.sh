@@ -27,7 +27,7 @@ subtask_files=$(ls subtask_*.md 2>/dev/null | grep -v template)
 if [ -n "$subtask_files" ]; then
   for sf in $subtask_files; do
     if grep -q "status: active" "$sf" 2>/dev/null; then
-      incomplete=$(grep -c '^\- \[ \]' "$sf" 2>/dev/null || echo "0")
+      incomplete=$(grep -c '^- \[ \]' "$sf" 2>/dev/null || echo "0")
       has_gate_pass=$(grep -ci 'gate result.*pass' "$sf" 2>/dev/null || echo "0")
       if [ "$incomplete" -gt 0 ] && [ "$has_gate_pass" -eq 0 ]; then
         echo "🔗 [autoworker] CHAIN RECOVERY NEEDED: Active subtask ($sf) has $incomplete incomplete steps."

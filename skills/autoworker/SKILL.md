@@ -5,7 +5,7 @@ description: >
   implementation task. Provides automatic task decomposition, code implementation,
   testing (L1-L4), and iterative quality gates until completion. Invoke with /autoworker.
 user-invocable: true
-version: "1.2.0"
+version: "1.3.0"
 author: "GitHdu"
 license: "MIT"
 tags: workflow, automation, quality-gates, testing
@@ -179,7 +179,7 @@ while autoworker:dispatch (multi-subtask positioning):  # Re-read active subtask
 
 **Core principle**: Once the execution chain starts, it MUST run to completion (gate-check PASS) without any interruption. The chain is a single continuous process, not a series of pauses.
 
-**🚨 SAME-RESPONSE RULE** (most critical — prevents 90% of interruptions):
+**🚨 SAME-RESPONSE RULE** (most critical — addresses the most common interruption pattern):
 
 > Each skill's output summary AND its next-skill invocation MUST appear in the **SAME response**. You MUST NOT output a summary then stop and wait for user response. The skill invocation is NOT optional — it is the mandatory continuation of the current action.
 

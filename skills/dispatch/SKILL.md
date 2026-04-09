@@ -122,7 +122,7 @@ Only exception: Gate PASS — first invoke `autoworker:sync-docs` (no argument) 
 
 When `autoworker:dispatch` is called after a chain interruption (e.g., user message broke the chain, system error, or session recovery):
 
-1. **Detect interruption**: If this dispatch call is NOT immediately preceded by another skill's chain step (i.e., there's a gap in the chain), this is a recovery scenario
+1. **Detect interruption**: If this dispatch call is NOT immediately preceded by another skill's chain step (i.e., there's a gap in the chain), this is a recovery scenario. **Concrete signals**: the most recent assistant message has no `[CHAIN → ...]` indicator, OR the user sent an unrelated message, OR this is a new session after /clear.
 2. **Read subtask state**: Re-read the subtask file to determine exactly where execution left off
 3. **Resume immediately**: Route to the next skill based on current file state — do not ask user, do not report "chain was broken"
 4. **Output recovery indicator**: `[CHAIN RECOVERY → target_skill]` to signal chain is resuming

@@ -9,7 +9,7 @@
       "name": "autoworker",
       "source": "./",
       "description": "Auto-loop execution workflow with quality gates for Claude Code. Automatically decomposes tasks, implements code, runs tests, and iterates through quality gates until completion.",
-      "version": "1.2.0"
+      "version": "1.3.0"
     }
   ]
 }
